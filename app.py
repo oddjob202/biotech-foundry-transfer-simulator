@@ -182,7 +182,27 @@ def transfer_animation() -> None:
         st.warning("No valid operating point exists for the current liquid levels and selected illustrative pump.")
 
     if st.toggle("Show advanced pump/system curve", key="show_advanced_curve"):
-        st.caption("This diagnostic chart explains the current flow: the crossing of the pump and system curves is the operating point.")
+        st.caption("This is a what-if explorer. Pick a flow rate to compare the head the pump can supply with the head the system needs. The real operating point remains where the two curves cross.")
+        max_flow_lpm = float(pump.max_flow_m3_s * 60_000)
+        default_explore_lpm = min(max_flow_lpm, max(0.0, current_flow * 60_000))
+        explore_lpm = st.slider(
+            "Explore a flow rate (L/min)", min_value=0.0, max_value=max_flow_lpm,
+            value=default_explore_lpm, step=0.5, key=f"explore_flow_{pump_name}",
+        )
+        explore_flow_m3_s = explore_lpm / 60_000
+        explore_pump_head_m = pump.head_m(explore_flow_m3_s)
+        explore_system_head_m = calculate_hydraulics(current_config, explore_flow_m3_s).total_dynamic_head_m
+        head_difference_m = explore_pump_head_m - explore_system_head_m
+        with st.container(horizontal=True):
+            st.metric("Pump can supply", f"{explore_pump_head_m:.1f} m", border=True)
+            st.metric("System requires", f"{explore_system_head_m:.1f} m", border=True)
+            st.metric("Head difference", f"{head_difference_m:+.1f} m", border=True)
+        if abs(head_difference_m) < 0.1:
+            st.success("This is essentially the operating point: pump supply matches system demand.")
+        elif head_difference_m > 0:
+            st.info("At this trial flow, the pump has extra head available, so the actual flow would increase toward the operating point.")
+        else:
+            st.info("At this trial flow, the system needs more head than the pump can supply, so the actual flow would decrease toward the operating point.")
         flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 151)
         curve_data = [{"Flow (L/min)": float(q * 60_000), "Pump head (m)": float(pump.head_m(float(q))),
                        "System head (m)": float(calculate_hydraulics(current_config, float(q)).total_dynamic_head_m)} for q in flows]
@@ -193,6 +213,12 @@ def transfer_animation() -> None:
         if point:
             series.append({"name": "Current operating point", "type": "scatter", "symbolSize": 11,
                            "data": [[float(point.flow_m3_s * 60_000), float(point.head_m)]]})
+        series.extend([
+            {"name": "Explored flow — pump", "type": "scatter", "symbolSize": 10,
+             "itemStyle": {"color": "#a855f7"}, "data": [[explore_lpm, float(explore_pump_head_m)]]},
+            {"name": "Explored flow — system", "type": "scatter", "symbol": "diamond", "symbolSize": 10,
+             "itemStyle": {"color": "#f59e0b"}, "data": [[explore_lpm, float(explore_system_head_m)]]},
+        ])
         st.echarts_chart(
             {"dataset": {"source": curve_data}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
              "legend": {"top": 4}, "grid": {"left": 72, "right": 24, "top": 52, "bottom": 92},
