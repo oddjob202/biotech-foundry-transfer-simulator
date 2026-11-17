@@ -130,16 +130,22 @@ def transfer_animation() -> None:
                     "lineStyle": {"color": flow_color, "width": 4, "type": "dashed" if flow_active else "solid", "opacity": 0.9,
                                   "shadowBlur": 10 if flow_active else 0, "shadowColor": flow_color},
                     "data": [
-                        {"name": "Source tank", "x": 50, "y": 100, "symbol": "roundRect", "symbolSize": [155, 78],
+                        {"name": "Source tank", "x": 40, "y": 55, "symbol": "roundRect", "symbolSize": [155, 78],
                          "itemStyle": {"color": "#2563eb", "shadowBlur": 18 if flow_active else 0, "shadowColor": tank_glow}},
-                        {"name": "Transfer pump", "x": 260, "y": 100, "symbol": "circle", "symbolSize": 90,
+                        {"name": "Outlet", "x": 120, "y": 145, "symbol": "circle", "symbolSize": 18,
+                         "label": {"show": True, "position": "bottom", "formatter": "Bottom outlet", "color": flow_color}, "itemStyle": {"color": flow_color}},
+                        {"name": "Transfer pump", "x": 265, "y": 145, "symbol": "circle", "symbolSize": 90,
                          "itemStyle": {"color": pump_color, "shadowBlur": 20 if flow_active else 0, "shadowColor": flow_color}},
-                        {"name": "Destination tank", "x": 470, "y": 100, "symbol": "roundRect", "symbolSize": [165, 78],
+                        {"name": "Inlet", "x": 420, "y": 25, "symbol": "circle", "symbolSize": 18,
+                         "label": {"show": True, "position": "top", "formatter": "Top inlet", "color": flow_color}, "itemStyle": {"color": flow_color}},
+                        {"name": "Destination tank", "x": 500, "y": 75, "symbol": "roundRect", "symbolSize": [165, 78],
                          "itemStyle": {"color": "#2563eb", "shadowBlur": 18 if flow_active else 0, "shadowColor": tank_glow}},
                     ],
                     "links": [
-                        {"source": "Source tank", "target": "Transfer pump", "value": f"{current_flow * 60_000:.1f} L/min"},
-                        {"source": "Transfer pump", "target": "Destination tank", "value": f"{length_ft:.0f} ft · {diameter_in:g} in pipe"},
+                        {"source": "Source tank", "target": "Outlet", "value": ""},
+                        {"source": "Outlet", "target": "Transfer pump", "value": f"{current_flow * 60_000:.1f} L/min"},
+                        {"source": "Transfer pump", "target": "Inlet", "value": f"{length_ft:.0f} ft · {diameter_in:g} in pipe"},
+                        {"source": "Inlet", "target": "Destination tank", "value": ""},
                     ],
                 }],
             },
@@ -147,7 +153,7 @@ def transfer_animation() -> None:
             height=220,
             alt="SCADA-style process display of source tank, running pump, pipe, and destination tank",
         )
-        st.caption(f"Selected pump: {pump.name}. When flow is active, the tank and pump have a soft green aura and the transfer pipe becomes a glowing dashed line. Gray means paused; red means no valid operating point.")
+        st.caption(f"Selected pump: {pump.name}. Water exits the source through its bottom outlet, passes through the pump and pipe, then enters the destination at its top inlet. When flow is active, the tank and pump have a soft green aura and the transfer pipe becomes a glowing dashed line. Gray means paused; red means no valid operating point.")
 
     st.echarts_chart(
         {
