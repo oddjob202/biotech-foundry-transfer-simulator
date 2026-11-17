@@ -124,7 +124,9 @@ def transfer_animation() -> None:
         source_x, source_y = 50, 170
         destination_x, destination_y = 735, 45
         tank_width, tank_height = 150, 115
-        pump_x, pump_y = 370, 250
+        # Keep the pump below the source tank so the pipe visibly exits its
+        # bottom outlet before crossing over to the rising discharge line.
+        pump_x, pump_y = 370, 340
         source_fill_height = max(0, min(tank_height - 8, (tank_height - 8) * source_percent / 100))
         destination_fill_height = max(0, min(tank_height - 8, (tank_height - 8) * destination_percent / 100))
         source_outlet_x, source_outlet_y = source_x + tank_width / 2, source_y + tank_height
@@ -170,7 +172,7 @@ def transfer_animation() -> None:
                 }],
             },
             key="scada_flow_path",
-            height=320,
+            height=410,
             alt="Process display with a draining source tank, transfer pump, rising pipe, and filling elevated destination tank",
         )
         st.caption(f"Selected pump: {pump.name}. Water leaves the bottom of the lower source tank, passes through the pump, rises through the pipe, and enters the top of the higher destination tank. The blue fill moves with the simulation; a soft green aura and dashed line mean flow is active.")
