@@ -40,7 +40,11 @@ if point is None:
 else:
     operating = calculate_hydraulics(config, point.flow_m3_s)
     if abs(point.flow_m3_s - desired_q) / desired_q > 0.05:
-        st.info(f"The selected pump's operating flow is {point.flow_m3_s * 60_000:.1f} L/min, not the requested setpoint.")
+        st.info(
+            f"Requested flow: {desired_lpm:.1f} L/min. This pump would naturally operate at "
+            f"{point.flow_m3_s * 60_000:.1f} L/min in this system. A speed controller or valve "
+            "would be needed to hold the requested flow."
+        )
 
 cols = st.columns(4)
 cols[0].metric("Desired velocity", f"{desired.velocity_m_s:.3f} m/s")
@@ -53,14 +57,23 @@ st.dataframe({"Quantity": ["Pipe friction loss", "Minor loss", "Static head", "H
               "Value": [f"{desired.pipe_head_loss_m:.3f} m", f"{desired.minor_head_loss_m:.3f} m", f"{desired.static_head_m:.3f} m", f"{desired.hydraulic_power_w:.1f} W", f"{transfer_time_seconds(volume_l / 1000, desired_q) / 60:.1f} min"]}, hide_index=True, use_container_width=True)
 
 st.subheader("Pump and system curves")
+st.caption(
+    "The curves describe the physical pipe-and-pump combination. Changing desired flow or transfer "
+    "volume changes the table above, but not these curves. Change pipe, elevation, fittings, or temperature "
+    "to change the system curve."
+)
 flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 200)
 system_heads = [calculate_hydraulics(config, float(q)).total_dynamic_head_m for q in flows]
 fig, ax = plt.subplots()
 ax.plot(flows * 60_000, [pump.head_m(float(q)) for q in flows], label="Illustrative pump curve")
 ax.plot(flows * 60_000, system_heads, label="System curve")
+if pump.min_flow_m3_s <= desired_q <= pump.max_flow_m3_s:
+    ax.axvline(desired_lpm, color="dimgray", linestyle="--", alpha=.75, label="Requested flow")
+    ax.scatter([desired_lpm], [desired.total_dynamic_head_m], color="black", marker="x", s=60,
+               zorder=3, label="Head required at requested flow")
 if point:
     ax.scatter([point.flow_m3_s * 60_000], [point.head_m], color="crimson", zorder=3, label="Operating point")
 ax.set(xlabel="Flow (L/min)", ylabel="Head (m)", ylim=(0, None))
 ax.grid(alpha=.3); ax.legend()
-st.pyplot(fig, use_container_width=True)
+st.pyplot(fig, width="stretch")
 st.caption("Limitations: constant tank elevations and flow; no pump efficiency, NPSH, transients, leaks, non-water fluids, or positive-displacement pump behavior.")
