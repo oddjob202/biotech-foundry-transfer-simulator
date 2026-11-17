@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biotech-foundry-hydraulics"
+version = "0.1.0"
+description = "Iteration 1 water-transfer hydraulic simulator"
+requires-python = ">=3.13"
+dependencies = ["numpy>=2.1", "scipy>=1.14", "matplotlib>=3.9", "streamlit>=1.40"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.setuptools.packages.find]
+where = ["src"]
