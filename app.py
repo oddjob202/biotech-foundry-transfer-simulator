@@ -109,19 +109,43 @@ def transfer_animation() -> None:
         st.metric("Elapsed simulated time", f"{state.elapsed_s / 60:.1f} min", border=True)
         st.metric("Remaining at current flow", "—" if remaining_s is None else f"{remaining_s / 60:.1f} min", border=True)
 
+    flow_active = st.session_state.sim_running and current_flow > 0
+    flow_color = "#16a34a" if flow_active else "#64748b"
+    pump_color = "#22c55e" if flow_active else "#94a3b8"
+    if point is None:
+        flow_color = pump_color = "#dc2626"
+    flow_status = "Flow active" if flow_active else ("Pump unavailable" if point is None else "Paused")
     with st.container(border=True):
-        st.markdown("#### :material/water_drop: Live flow path")
-        st.mermaid_chart(
-            f'''flowchart LR
-                S["Source tank<br/>{state.source_volume_m3 * 1000:.1f} L<br/>Surface: {source_level:.2f} m"]
-                P((Pump))
-                D["Destination tank<br/>{state.destination_volume_m3 * 1000:.1f} L<br/>Surface: {destination_level:.2f} m"]
-                S -->|"{current_flow * 60_000:.1f} L/min"| P
-                P -->|"{length_ft:.1f} ft of {diameter_in:g} in pipe"| D
-            ''',
-            alt="Source tank transfers water through the selected pump and pipe to the destination tank",
+        st.markdown(f"#### :material/account_tree: Process status — :green[{flow_status}]" if flow_active else f"#### :material/account_tree: Process status — {flow_status}")
+        st.echarts_chart(
+            {
+                "animationDurationUpdate": 300,
+                "tooltip": {"formatter": "{b}"},
+                "series": [{
+                    "type": "graph", "layout": "none", "roam": False, "draggable": False,
+                    "edgeSymbol": ["none", "arrow"], "edgeSymbolSize": [0, 14],
+                    "label": {"show": True, "position": "inside", "color": "#ffffff", "fontSize": 13},
+                    "edgeLabel": {"show": True, "formatter": "{c}", "color": flow_color},
+                    "lineStyle": {"color": flow_color, "width": 5, "opacity": 0.9},
+                    "data": [
+                        {"name": f"Source tank\\n{state.source_volume_m3 * 1000:.0f} L", "x": 50, "y": 100,
+                         "symbol": "roundRect", "symbolSize": [155, 78], "itemStyle": {"color": "#2563eb"}},
+                        {"name": "Transfer pump", "x": 260, "y": 100, "symbol": "circle", "symbolSize": 90,
+                         "itemStyle": {"color": pump_color, "shadowBlur": 20 if flow_active else 0, "shadowColor": flow_color}},
+                        {"name": f"Destination tank\\n{state.destination_volume_m3 * 1000:.0f} L", "x": 470, "y": 100,
+                         "symbol": "roundRect", "symbolSize": [165, 78], "itemStyle": {"color": "#2563eb"}},
+                    ],
+                    "links": [
+                        {"source": f"Source tank\\n{state.source_volume_m3 * 1000:.0f} L", "target": "Transfer pump", "value": f"{current_flow * 60_000:.1f} L/min"},
+                        {"source": "Transfer pump", "target": f"Destination tank\\n{state.destination_volume_m3 * 1000:.0f} L", "value": f"{length_ft:.0f} ft · {diameter_in:g} in pipe"},
+                    ],
+                }],
+            },
+            key="scada_flow_path",
+            height=220,
+            alt="SCADA-style process display of source tank, running pump, pipe, and destination tank",
         )
-        st.caption(f"Selected pump: {pump.name}")
+        st.caption(f"Selected pump: {pump.name}. Green means the pump and transfer line are actively flowing; gray means paused; red means no valid operating point.")
 
     st.echarts_chart(
         {
