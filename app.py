@@ -68,7 +68,7 @@ st.dataframe({"Quantity": ["Pipe friction loss", "Minor loss", "Static head", "H
              hide_index=True, width="stretch", alt="Hydraulic losses, head, power, and ideal transfer time at the requested flow")
 
 st.subheader("Interactive pump and system curves")
-st.caption("Hover for exact values; drag to zoom, use the slider below the chart to pan, and use the chart tools to reset. Changing desired flow moves the black point; changing pipe, elevation, fittings, or temperature changes the system curve.")
+st.caption("Hover for exact values; drag to zoom, use the slider below the chart to pan, and use the chart tools to reset. Changing desired flow moves the requested-condition point; changing pipe, elevation, fittings, or temperature changes the system curve.")
 flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 201)
 curve_data = [{"Flow (L/min)": float(q * 60_000), "Pump head (m)": float(pump.head_m(float(q))),
                "System head (m)": float(calculate_hydraulics(config, float(q)).total_dynamic_head_m)} for q in flows]
