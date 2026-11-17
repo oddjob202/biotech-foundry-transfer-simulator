@@ -5,6 +5,7 @@ import pytest
 from biotech_foundry.hydraulics import (HydraulicInputError, SystemConfiguration, calculate_hydraulics,
                                         flow_to_velocity, friction_factor, pipe_area, reynolds_number, water_properties)
 from biotech_foundry.pumps import IllustrativeCentrifugalPump, find_operating_point, pump_catalog
+from biotech_foundry.simulation import CylindricalTank, TransferState, advance_transfer, operating_point_at_state
 
 
 def config(**changes):
@@ -80,3 +81,17 @@ def test_water_properties_reference_temperature():
     density, viscosity = water_properties(20)
     assert density == pytest.approx(998.2, rel=.002)
     assert viscosity == pytest.approx(0.001002, rel=.01)
+
+
+def test_dynamic_tank_surface_and_transfer_conserve_volume():
+    source = CylindricalTank(diameter_m=1.0, capacity_m3=1.0, base_elevation_m=0.0)
+    destination = CylindricalTank(diameter_m=1.0, capacity_m3=1.0, base_elevation_m=1.0)
+    state = TransferState(source_volume_m3=.5, destination_volume_m3=0.0)
+    assert source.surface_elevation_m(.5) == pytest.approx(.5 / (math.pi / 4))
+    point = operating_point_at_state(config(destination_elevation_m=0), source, destination, state, IllustrativeCentrifugalPump())
+    assert point is not None
+    later = advance_transfer(config(destination_elevation_m=0), source, destination, state, IllustrativeCentrifugalPump(), 10)
+    assert later.status == "Running"
+    assert later.source_volume_m3 < state.source_volume_m3
+    assert later.destination_volume_m3 > state.destination_volume_m3
+    assert later.source_volume_m3 + later.destination_volume_m3 == pytest.approx(.5)
