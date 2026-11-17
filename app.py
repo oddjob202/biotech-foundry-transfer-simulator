@@ -54,7 +54,7 @@ cols[3].metric("Desired TDH", f"{desired.total_dynamic_head_m:.2f} m")
 
 st.subheader("Desired-flow calculation")
 st.dataframe({"Quantity": ["Pipe friction loss", "Minor loss", "Static head", "Hydraulic power", "Ideal transfer time"],
-              "Value": [f"{desired.pipe_head_loss_m:.3f} m", f"{desired.minor_head_loss_m:.3f} m", f"{desired.static_head_m:.3f} m", f"{desired.hydraulic_power_w:.1f} W", f"{transfer_time_seconds(volume_l / 1000, desired_q) / 60:.1f} min"]}, hide_index=True, use_container_width=True)
+              "Value": [f"{desired.pipe_head_loss_m:.3f} m", f"{desired.minor_head_loss_m:.3f} m", f"{desired.static_head_m:.3f} m", f"{desired.hydraulic_power_w:.1f} W", f"{transfer_time_seconds(volume_l / 1000, desired_q) / 60:.1f} min"]}, hide_index=True, width="stretch")
 
 st.subheader("Pump and system curves")
 st.caption(
