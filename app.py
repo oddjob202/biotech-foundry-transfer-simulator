@@ -177,43 +177,32 @@ def transfer_animation() -> None:
         )
         st.caption(f"Selected pump: {pump.name}. Water leaves the bottom of the lower source tank, passes through the pump, rises through the pipe, and enters the top of the higher destination tank. The blue fill moves with the simulation; a soft green aura and dashed line mean flow is active.")
 
-    st.echarts_chart(
-        {
-            "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
-            "grid": {"left": 60, "right": 28, "top": 30, "bottom": 48},
-            "xAxis": {"type": "category", "data": ["Source tank", "Destination tank"]},
-            "yAxis": {"type": "value", "name": "Filled (%)", "min": 0, "max": 100},
-            "series": [{"name": "Tank fill", "type": "bar", "data": [float(source_percent), float(destination_percent)], "label": {"show": True, "formatter": "{c}%"}}],
-        },
-        key="tank_levels",
-        height=270,
-        alt="Source tank draining and destination tank filling as the transfer simulation runs",
-    )
-
     st.caption(f"Status: {state.status}. Current water surfaces: source {source_level:.2f} m; destination {destination_level:.2f} m. Current TDH: {current.total_dynamic_head_m:.2f} m.")
     if point is None:
         st.warning("No valid operating point exists for the current liquid levels and selected illustrative pump.")
 
-    flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 151)
-    curve_data = [{"Flow (L/min)": float(q * 60_000), "Pump head (m)": float(pump.head_m(float(q))),
-                   "System head (m)": float(calculate_hydraulics(current_config, float(q)).total_dynamic_head_m)} for q in flows]
-    series = [
-        {"name": "Illustrative pump curve", "type": "line", "showSymbol": False, "encode": {"x": "Flow (L/min)", "y": "Pump head (m)"}},
-        {"name": "Current system curve", "type": "line", "showSymbol": False, "encode": {"x": "Flow (L/min)", "y": "System head (m)"}},
-    ]
-    if point:
-        series.append({"name": "Current operating point", "type": "scatter", "symbolSize": 11,
-                       "data": [[float(point.flow_m3_s * 60_000), float(point.head_m)]]})
-    st.echarts_chart(
-        {"dataset": {"source": curve_data}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
-         "legend": {"top": 4}, "grid": {"left": 72, "right": 24, "top": 52, "bottom": 92},
-         "xAxis": {"type": "value", "name": "Flow (L/min)", "nameLocation": "middle", "nameGap": 32},
-         "yAxis": {"type": "value", "name": "Head (m)", "nameLocation": "middle", "nameGap": 48, "min": 0},
-         "dataZoom": [{"type": "inside"}, {"type": "slider", "bottom": 15}],
-         "toolbox": {"feature": {"dataZoom": {}, "restore": {}, "saveAsImage": {}}}, "series": series},
-        key="dynamic_pump_system_curve", height=420,
-        alt="Pump and changing system curves during transfer, with current operating point",
-    )
+    if st.toggle("Show advanced pump/system curve", key="show_advanced_curve"):
+        st.caption("This diagnostic chart explains the current flow: the crossing of the pump and system curves is the operating point.")
+        flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 151)
+        curve_data = [{"Flow (L/min)": float(q * 60_000), "Pump head (m)": float(pump.head_m(float(q))),
+                       "System head (m)": float(calculate_hydraulics(current_config, float(q)).total_dynamic_head_m)} for q in flows]
+        series = [
+            {"name": "Illustrative pump curve", "type": "line", "showSymbol": False, "encode": {"x": "Flow (L/min)", "y": "Pump head (m)"}},
+            {"name": "Current system curve", "type": "line", "showSymbol": False, "encode": {"x": "Flow (L/min)", "y": "System head (m)"}},
+        ]
+        if point:
+            series.append({"name": "Current operating point", "type": "scatter", "symbolSize": 11,
+                           "data": [[float(point.flow_m3_s * 60_000), float(point.head_m)]]})
+        st.echarts_chart(
+            {"dataset": {"source": curve_data}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
+             "legend": {"top": 4}, "grid": {"left": 72, "right": 24, "top": 52, "bottom": 92},
+             "xAxis": {"type": "value", "name": "Flow (L/min)", "nameLocation": "middle", "nameGap": 32},
+             "yAxis": {"type": "value", "name": "Head (m)", "nameLocation": "middle", "nameGap": 48, "min": 0},
+             "dataZoom": [{"type": "inside"}, {"type": "slider", "bottom": 15}],
+             "toolbox": {"feature": {"dataZoom": {}, "restore": {}, "saveAsImage": {}}}, "series": series},
+            key="dynamic_pump_system_curve", height=420,
+            alt="Pump and changing system curves during transfer, with current operating point",
+        )
 
 
 transfer_animation()
