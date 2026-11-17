@@ -134,7 +134,7 @@ def transfer_animation() -> None:
         destination_pipe_top_y = destination_y - 28
         pipe_points = [
             [source_outlet_x, source_outlet_y], [source_outlet_x, pump_y], [pump_x - 46, pump_y],
-            [pump_x + 46, pump_y], [610, destination_pipe_top_y], [destination_inlet_x, destination_pipe_top_y],
+            [pump_x + 46, pump_y], [610, pump_y], [610, destination_pipe_top_y], [destination_inlet_x, destination_pipe_top_y],
             [destination_inlet_x, destination_inlet_y],
         ]
         aura = 22 if flow_active else 0
