@@ -182,7 +182,7 @@ def transfer_animation() -> None:
         st.warning("No valid operating point exists for the current liquid levels and selected illustrative pump.")
 
     if st.toggle("Show advanced pump/system curve", key="show_advanced_curve"):
-        st.caption("This is a what-if explorer. Pick a flow rate to compare the head the pump can supply with the head the system needs. The real operating point remains where the two curves cross.")
+        st.caption("Ask: “If water flowed this fast, would the pump have enough push?” Head is pump push expressed as vertical lift; 10 m of head is roughly enough push to lift water 10 m.")
         max_flow_lpm = float(pump.max_flow_m3_s * 60_000)
         default_explore_lpm = min(max_flow_lpm, max(0.0, current_flow * 60_000))
         explore_lpm = st.slider(
@@ -194,15 +194,15 @@ def transfer_animation() -> None:
         explore_system_head_m = calculate_hydraulics(current_config, explore_flow_m3_s).total_dynamic_head_m
         head_difference_m = explore_pump_head_m - explore_system_head_m
         with st.container(horizontal=True):
-            st.metric("Pump can supply", f"{explore_pump_head_m:.1f} m", border=True)
-            st.metric("System requires", f"{explore_system_head_m:.1f} m", border=True)
-            st.metric("Head difference", f"{head_difference_m:+.1f} m", border=True)
+            st.metric("Pump push available", f"{explore_pump_head_m:.1f} m", border=True)
+            st.metric("Push needed: lift + pipe", f"{explore_system_head_m:.1f} m", border=True)
+            st.metric("Extra / missing push", f"{head_difference_m:+.1f} m", border=True)
         if abs(head_difference_m) < 0.1:
-            st.success("This is essentially the operating point: pump supply matches system demand.")
+            st.success(f"At {explore_lpm:.1f} L/min, push available matches push needed. This is the natural operating point.")
         elif head_difference_m > 0:
-            st.info("At this trial flow, the pump has extra head available, so the actual flow would increase toward the operating point.")
+            st.info(f"At {explore_lpm:.1f} L/min, the pump has {head_difference_m:.1f} m of extra push. Water would speed up until that extra push is used up at the operating point.")
         else:
-            st.info("At this trial flow, the system needs more head than the pump can supply, so the actual flow would decrease toward the operating point.")
+            st.info(f"At {explore_lpm:.1f} L/min, the system needs {-head_difference_m:.1f} m more push than the pump can provide. Water would slow down toward the operating point.")
         flows = np.linspace(pump.min_flow_m3_s, pump.max_flow_m3_s, 151)
         curve_data = [{"Flow (L/min)": float(q * 60_000), "Pump head (m)": float(pump.head_m(float(q))),
                        "System head (m)": float(calculate_hydraulics(current_config, float(q)).total_dynamic_head_m)} for q in flows]
