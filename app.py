@@ -129,9 +129,11 @@ def transfer_animation() -> None:
         destination_fill_height = max(0, min(tank_height - 8, (tank_height - 8) * destination_percent / 100))
         source_outlet_x, source_outlet_y = source_x + tank_width / 2, source_y + tank_height
         destination_inlet_x, destination_inlet_y = destination_x + tank_width / 2, destination_y
+        destination_pipe_top_y = destination_y - 28
         pipe_points = [
             [source_outlet_x, source_outlet_y], [source_outlet_x, pump_y], [pump_x - 46, pump_y],
-            [pump_x + 46, pump_y], [610, destination_inlet_y], [destination_inlet_x, destination_inlet_y],
+            [pump_x + 46, pump_y], [610, destination_pipe_top_y], [destination_inlet_x, destination_pipe_top_y],
+            [destination_inlet_x, destination_inlet_y],
         ]
         aura = 22 if flow_active else 0
         pipe_style = {
