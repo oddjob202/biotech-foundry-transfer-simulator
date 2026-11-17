@@ -109,6 +109,20 @@ def transfer_animation() -> None:
         st.metric("Elapsed simulated time", f"{state.elapsed_s / 60:.1f} min", border=True)
         st.metric("Remaining at current flow", "—" if remaining_s is None else f"{remaining_s / 60:.1f} min", border=True)
 
+    with st.container(border=True):
+        st.markdown("#### :material/water_drop: Live flow path")
+        st.mermaid_chart(
+            f'''flowchart LR
+                S["Source tank<br/>{state.source_volume_m3 * 1000:.1f} L<br/>Surface: {source_level:.2f} m"]
+                P((Pump))
+                D["Destination tank<br/>{state.destination_volume_m3 * 1000:.1f} L<br/>Surface: {destination_level:.2f} m"]
+                S -->|"{current_flow * 60_000:.1f} L/min"| P
+                P -->|"{length_ft:.1f} ft of {diameter_in:g} in pipe"| D
+            ''',
+            alt="Source tank transfers water through the selected pump and pipe to the destination tank",
+        )
+        st.caption(f"Selected pump: {pump.name}")
+
     st.echarts_chart(
         {
             "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
