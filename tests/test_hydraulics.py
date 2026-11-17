@@ -4,7 +4,7 @@ import pytest
 
 from biotech_foundry.hydraulics import (HydraulicInputError, SystemConfiguration, calculate_hydraulics,
                                         flow_to_velocity, friction_factor, pipe_area, reynolds_number, water_properties)
-from biotech_foundry.pumps import IllustrativeCentrifugalPump, find_operating_point
+from biotech_foundry.pumps import IllustrativeCentrifugalPump, find_operating_point, pump_catalog
 
 
 def config(**changes):
@@ -66,6 +66,14 @@ def test_invalid_configurations_raise(bad):
 def test_out_of_range_pump_head_raises():
     with pytest.raises(HydraulicInputError):
         IllustrativeCentrifugalPump().head_m(.01)
+
+
+def test_builtin_pump_catalog_has_distinct_supported_curves():
+    pumps = pump_catalog()
+    assert len(pumps) == 3
+    for pump in pumps.values():
+        assert pump.head_m(pump.min_flow_m3_s) > 0
+        assert pump.head_m(pump.max_flow_m3_s) == pytest.approx(0)
 
 
 def test_water_properties_reference_temperature():
