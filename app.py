@@ -118,42 +118,60 @@ def transfer_animation() -> None:
     flow_status = "Flow active" if flow_active else ("Pump unavailable" if point is None else "Paused")
     with st.container(border=True):
         st.markdown(f"#### :material/account_tree: Process status — :green[{flow_status}]" if flow_active else f"#### :material/account_tree: Process status — {flow_status}")
+        # A fixed-coordinate process drawing is intentionally used instead of a
+        # network graph: it lets the tanks look like tanks and makes the physical
+        # path (bottom outlet -> pump -> rising pipe -> top inlet) unambiguous.
+        source_x, source_y = 50, 170
+        destination_x, destination_y = 735, 45
+        tank_width, tank_height = 150, 115
+        pump_x, pump_y = 370, 250
+        source_fill_height = max(0, min(tank_height - 8, (tank_height - 8) * source_percent / 100))
+        destination_fill_height = max(0, min(tank_height - 8, (tank_height - 8) * destination_percent / 100))
+        source_outlet_x, source_outlet_y = source_x + tank_width / 2, source_y + tank_height
+        destination_inlet_x, destination_inlet_y = destination_x + tank_width / 2, destination_y
+        pipe_points = [
+            [source_outlet_x, source_outlet_y], [source_outlet_x, pump_y], [pump_x - 46, pump_y],
+            [pump_x + 46, pump_y], [610, destination_inlet_y], [destination_inlet_x, destination_inlet_y],
+        ]
+        aura = 22 if flow_active else 0
+        pipe_style = {
+            "fill": "none", "stroke": flow_color, "lineWidth": 4,
+            "lineDash": [12, 8] if flow_active else None,
+            "shadowBlur": 13 if flow_active else 0, "shadowColor": flow_color,
+        }
         st.echarts_chart(
             {
                 "animation": False,
-                "tooltip": {"formatter": "{b}"},
-                "series": [{
-                    "type": "graph", "layout": "none", "roam": False, "draggable": False,
-                    "edgeSymbol": ["none", "arrow"], "edgeSymbolSize": [0, 14],
-                    "label": {"show": True, "position": "inside", "color": "#ffffff", "fontSize": 13},
-                    "edgeLabel": {"show": True, "formatter": "{c}", "color": flow_color},
-                    "lineStyle": {"color": flow_color, "width": 4, "type": "dashed" if flow_active else "solid", "opacity": 0.9,
-                                  "shadowBlur": 10 if flow_active else 0, "shadowColor": flow_color},
-                    "data": [
-                        {"name": "Source tank", "x": 40, "y": 55, "symbol": "roundRect", "symbolSize": [155, 78],
-                         "itemStyle": {"color": "#2563eb", "shadowBlur": 18 if flow_active else 0, "shadowColor": tank_glow}},
-                        {"name": "Outlet", "x": 120, "y": 145, "symbol": "circle", "symbolSize": 18,
-                         "label": {"show": True, "position": "bottom", "formatter": "Bottom outlet", "color": flow_color}, "itemStyle": {"color": flow_color}},
-                        {"name": "Transfer pump", "x": 265, "y": 145, "symbol": "circle", "symbolSize": 90,
-                         "itemStyle": {"color": pump_color, "shadowBlur": 20 if flow_active else 0, "shadowColor": flow_color}},
-                        {"name": "Inlet", "x": 420, "y": 25, "symbol": "circle", "symbolSize": 18,
-                         "label": {"show": True, "position": "top", "formatter": "Top inlet", "color": flow_color}, "itemStyle": {"color": flow_color}},
-                        {"name": "Destination tank", "x": 500, "y": 75, "symbol": "roundRect", "symbolSize": [165, 78],
-                         "itemStyle": {"color": "#2563eb", "shadowBlur": 18 if flow_active else 0, "shadowColor": tank_glow}},
-                    ],
-                    "links": [
-                        {"source": "Source tank", "target": "Outlet", "value": ""},
-                        {"source": "Outlet", "target": "Transfer pump", "value": f"{current_flow * 60_000:.1f} L/min"},
-                        {"source": "Transfer pump", "target": "Inlet", "value": f"{length_ft:.0f} ft · {diameter_in:g} in pipe"},
-                        {"source": "Inlet", "target": "Destination tank", "value": ""},
+                "tooltip": {"show": False},
+                "graphic": [{
+                    "type": "group", "left": "center", "top": 0,
+                    "children": [
+                        {"type": "rect", "shape": {"x": source_x + 4, "y": source_y + tank_height - source_fill_height - 4, "width": tank_width - 8, "height": source_fill_height, "r": 9}, "style": {"fill": "#2563eb"}},
+                        {"type": "rect", "shape": {"x": source_x, "y": source_y, "width": tank_width, "height": tank_height, "r": 12}, "style": {"fill": "rgba(15, 23, 42, 0.1)", "stroke": "#93c5fd", "lineWidth": 3, "shadowBlur": aura, "shadowColor": tank_glow}},
+                        {"type": "text", "style": {"x": source_x + tank_width / 2, "y": source_y + 27, "text": "Source tank", "fill": "#ffffff", "font": "600 14px sans-serif", "textAlign": "center"}},
+                        {"type": "text", "style": {"x": source_x + tank_width / 2, "y": source_y + 52, "text": f"{source_percent:.0f}% full", "fill": "#dbeafe", "font": "13px sans-serif", "textAlign": "center"}},
+                        {"type": "rect", "shape": {"x": destination_x + 4, "y": destination_y + tank_height - destination_fill_height - 4, "width": tank_width - 8, "height": destination_fill_height, "r": 9}, "style": {"fill": "#2563eb"}},
+                        {"type": "rect", "shape": {"x": destination_x, "y": destination_y, "width": tank_width, "height": tank_height, "r": 12}, "style": {"fill": "rgba(15, 23, 42, 0.1)", "stroke": "#93c5fd", "lineWidth": 3, "shadowBlur": aura, "shadowColor": tank_glow}},
+                        {"type": "text", "style": {"x": destination_x + tank_width / 2, "y": destination_y + 27, "text": "Destination tank", "fill": "#ffffff", "font": "600 14px sans-serif", "textAlign": "center"}},
+                        {"type": "text", "style": {"x": destination_x + tank_width / 2, "y": destination_y + 52, "text": f"{destination_percent:.0f}% full", "fill": "#dbeafe", "font": "13px sans-serif", "textAlign": "center"}},
+                        {"type": "polyline", "shape": {"points": pipe_points}, "style": pipe_style},
+                        {"type": "circle", "shape": {"cx": source_outlet_x, "cy": source_outlet_y, "r": 8}, "style": {"fill": flow_color}},
+                        {"type": "circle", "shape": {"cx": destination_inlet_x, "cy": destination_inlet_y, "r": 8}, "style": {"fill": flow_color}},
+                        {"type": "circle", "shape": {"cx": pump_x, "cy": pump_y, "r": 44}, "style": {"fill": pump_color, "shadowBlur": aura, "shadowColor": flow_color}},
+                        {"type": "text", "style": {"x": pump_x, "y": pump_y + 5, "text": "Transfer\npump", "fill": "#ffffff", "font": "600 13px sans-serif", "textAlign": "center", "textVerticalAlign": "middle", "lineHeight": 18}},
+                        {"type": "polygon", "shape": {"points": [[destination_inlet_x - 10, destination_inlet_y + 18], [destination_inlet_x + 10, destination_inlet_y + 18], [destination_inlet_x, destination_inlet_y + 2]]}, "style": {"fill": flow_color}},
+                        {"type": "text", "style": {"x": source_outlet_x, "y": source_outlet_y + 26, "text": "Bottom outlet", "fill": flow_color, "font": "12px sans-serif", "textAlign": "center"}},
+                        {"type": "text", "style": {"x": destination_inlet_x, "y": destination_inlet_y - 18, "text": "Top inlet", "fill": flow_color, "font": "12px sans-serif", "textAlign": "center"}},
+                        {"type": "text", "style": {"x": 510, "y": 144, "text": f"{length_ft:.0f} ft · {diameter_in:g} in pipe", "fill": flow_color, "font": "12px sans-serif", "textAlign": "center"}},
+                        {"type": "text", "style": {"x": 255, "y": pump_y - 20, "text": f"{current_flow * 60_000:.1f} L/min", "fill": flow_color, "font": "12px sans-serif", "textAlign": "center"}},
                     ],
                 }],
             },
             key="scada_flow_path",
-            height=220,
-            alt="SCADA-style process display of source tank, running pump, pipe, and destination tank",
+            height=320,
+            alt="Process display with a draining source tank, transfer pump, rising pipe, and filling elevated destination tank",
         )
-        st.caption(f"Selected pump: {pump.name}. Water exits the source through its bottom outlet, passes through the pump and pipe, then enters the destination at its top inlet. When flow is active, the tank and pump have a soft green aura and the transfer pipe becomes a glowing dashed line. Gray means paused; red means no valid operating point.")
+        st.caption(f"Selected pump: {pump.name}. Water leaves the bottom of the lower source tank, passes through the pump, rises through the pipe, and enters the top of the higher destination tank. The blue fill moves with the simulation; a soft green aura and dashed line mean flow is active.")
 
     st.echarts_chart(
         {
