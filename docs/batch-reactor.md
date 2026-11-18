@@ -16,6 +16,12 @@ python -m pytest
 
 Omit `--config` for a two-hour heat-up demonstration. The JSON example heats a 60 L batch for 90 minutes and then allows 90 minutes of passive cooldown. The example's target is 40 °C. The four plot panels show water temperature, effective heater power, signed ambient loss, and true versus measured temperature. The terminal summary includes temperatures, geometry, equipment settings, energy totals, the peak energy-balance residual, and the first target crossing if it occurs during the configured run. The default plot path is `batch-reactor.png` in the current directory.
 
+## Operator view
+
+With the same environment active, run `python -m streamlit run app.py` and select **Batch Reactor** in the sidebar. The **Apply settings** button loads the scenario at time zero. Use **Play**, **Pause**, and **Reset**, or drag **Batch position** while paused. Playback runs at 120× simulated time.
+
+The vessel fill follows the working volume. Green identifies the energized heater and agitator. The dashed blue line links the virtual temperature probe to TT-201. Amber arrows show the direction of modeled ambient heat exchange. The trend shows the run trajectory with a cursor at the current playback time. The impeller animation illustrates the setpoint. Its apparent speed is illustrative.
+
 ## Parameters and units
 
 JSON fields may be omitted to use defaults. The model uses SI units, with RPM retained as the operator-facing agitation setpoint. Use kelvins in the input file and add 273.15 to a temperature given in °C. Use cubic meters for volume and divide liters by 1,000.

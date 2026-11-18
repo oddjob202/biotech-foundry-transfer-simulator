@@ -37,6 +37,8 @@ Future work can add manufacturer curve imports, pump efficiency and NPSH, non-cy
 
 ## Simulator 002 — Water-filled batch reactor
 
+Start `streamlit run app.py` and choose **Batch Reactor** in the sidebar for the operator view.
+
 Run the separate command-line simulator with
 `python -m biotech_foundry.batch_reactor --config examples/batch-reactor.json --plot /tmp/batch-reactor.png`.
 See the [batch reactor engineering guide](docs/batch-reactor.md) for configuration, equations, and verification.
