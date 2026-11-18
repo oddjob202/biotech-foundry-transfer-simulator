@@ -118,3 +118,53 @@ def test_sensor_can_supply_an_independent_reading():
 
     result = simulate(BatchReactor(), sensor=OffsetSensor())
     np.testing.assert_array_equal(result.measured_k, result.temperature_k + 0.5)
+
+
+def test_thermostat_cycles_at_exact_thresholds_between_samples():
+    equipment = Equipment(temperature_setpoint_k=313.15)
+    reactor = BatchReactor(equipment=equipment)
+    settings = SolverSettings(duration_s=20_000, sample_interval_s=500)
+    result = simulate(reactor, settings)
+    switches = np.flatnonzero(np.diff(result.heater_power_w)) + 1
+    assert switches.size >= 4
+    off, on = switches[:2]
+    assert result.heater_power_w[off] == 0
+    assert result.heater_power_w[on] == equipment.heating_power_w
+    assert result.temperature_k[off] == pytest.approx(315.15, abs=1e-6, rel=0)
+    assert result.temperature_k[on] == pytest.approx(311.15, abs=1e-6, rel=0)
+    assert result.temperature_k.max() == pytest.approx(315.15, abs=1e-6, rel=0)
+    assert result.time_s[off] % settings.sample_interval_s != 0
+    assert np.all(np.diff(result.time_s) > 0)
+    active_s = np.sum(np.diff(result.time_s)[result.heater_power_w[:-1] > 0])
+    assert result.heater_energy_j[-1] == pytest.approx(equipment.heating_power_w * active_s)
+    assert result.electrical_energy_j == pytest.approx(equipment.electrical_power_w * active_s)
+    assert abs(result.energy_residual_j).max() < 1e-6
+
+
+@pytest.mark.parametrize(("initial_k", "heater_w"), [(320, 0), (315.15, 0), (313.15, 1275)])
+def test_thermostat_initial_state(initial_k, heater_w):
+    reactor = BatchReactor(water=Water(initial_temperature_k=initial_k),
+                           equipment=Equipment(temperature_setpoint_k=313.15))
+    result = simulate(reactor, SolverSettings(duration_s=20_000))
+    assert result.heater_power_w[0] == heater_w
+    assert np.any(result.heater_power_w > 0)
+
+
+def test_thermostat_cannot_restart_without_passive_cooling():
+    reactor = BatchReactor(ua_w_k=0, equipment=Equipment(temperature_setpoint_k=313.15))
+    result = simulate(reactor, SolverSettings(duration_s=20_000))
+    assert np.count_nonzero(np.diff(result.heater_power_w)) == 1
+    assert result.temperature_k[-1] == pytest.approx(315.15, abs=1e-6, rel=0)
+
+
+def test_scheduled_shutoff_overrides_thermostat_demand():
+    reactor = BatchReactor(equipment=Equipment(temperature_setpoint_k=313.15, heater_off_s=6000))
+    result = simulate(reactor, SolverSettings(duration_s=20_000))
+    assert np.all(result.heater_power_w[result.time_s >= 6000] == 0)
+
+
+def test_undersized_heater_stays_energized_below_setpoint():
+    equipment = Equipment(temperature_setpoint_k=313.15, heater_rated_w=100)
+    result = simulate(BatchReactor(equipment=equipment))
+    assert np.all(result.heater_power_w == equipment.heating_power_w)
+    assert np.max(result.temperature_k) < equipment.temperature_setpoint_k

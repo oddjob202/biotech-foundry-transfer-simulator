@@ -33,7 +33,9 @@ with st.sidebar:
         efficiency_pct = st.slider("Heater efficiency (%)", 0, 100, 85)
         rpm = st.number_input("Agitation setpoint (RPM)", min_value=0, value=200, step=25)
         duration_min = st.number_input("Batch duration (min)", 1, 1440, 180)
-        shutoff = st.checkbox("Schedule heater shutoff", value=True)
+        setpoint_c = st.number_input("Temperature setpoint (°C)", 2.0, 98.0, 40.0, step=0.5)
+        st.caption("The heater restarts 2 °C below the setpoint and stops 2 °C above it.")
+        shutoff = st.checkbox("Schedule final heater shutoff")
         cutoff_min = st.number_input("Shutoff time (min)", 1, 1440, 90)
         st.form_submit_button("Apply settings", width="stretch")
 
@@ -46,6 +48,7 @@ reactor = BatchReactor(
         heater_efficiency=efficiency_pct / 100,
         agitation_rpm=rpm,
         heater_off_s=cutoff_min * 60 if shutoff else None,
+        temperature_setpoint_k=setpoint_c + 273.15,
     ),
     ambient_temperature_k=ambient_c + 273.15,
     ua_w_k=ua,
@@ -117,7 +120,7 @@ def operator_view():
     reset_col.button("Reset", icon=":material/restart_alt:", on_click=reset)
     status_col.caption(f"{phase} · {batch_min:.1f} / {duration_min} min · playback 120×")
 
-    state.reactor_seek_min = batch_min
+    state.reactor_seek_min = int(state.reactor_elapsed / 30) / 2
     st.slider("Batch position (min)", 0.0, float(duration_min), step=0.5,
               key="reactor_seek_min", on_change=seek, disabled=playing)
 
@@ -130,10 +133,15 @@ def operator_view():
     metrics[3].metric("Heater energy to water", f"{result.heater_energy_j[index] / 3.6e6:.2f} kWh", border=True)
 
     st.subheader("Temperature trend")
+    st.caption(f"Setpoint {setpoint_c:g} °C · Heater on at {setpoint_c - 2:g} °C · "
+               f"Heater off at {setpoint_c + 2:g} °C")
+    band_lines = alt.Chart(pd.DataFrame({
+        "Temperature (°C)": [setpoint_c - 2, setpoint_c, setpoint_c + 2],
+    })).mark_rule(color="#64748b", strokeDash=[4, 4], opacity=0.65).encode(y="Temperature (°C):Q")
     cursor = alt.Chart(pd.DataFrame({"Batch time (min)": [batch_min]})).mark_rule(
         color="#fbbf68", strokeDash=[4, 4],
     ).encode(x="Batch time (min):Q")
-    st.altair_chart((trend_line + cursor).properties(height=215), width="stretch")
+    st.altair_chart((band_lines + trend_line + cursor).properties(height=215), width="stretch")
     if measured_c <= 0 or measured_c >= 100:
         st.warning("The prediction has reached the atmospheric liquid-water boundary. The model excludes freezing and boiling.")
 

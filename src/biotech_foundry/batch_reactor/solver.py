@@ -76,19 +76,31 @@ def simulate(
     equipment = reactor.equipment
     times = np.arange(0, duration, settings.sample_interval_s, dtype=float)
     times = np.append(times[times < duration], duration)
-    cutoff = equipment.heater_off_s
-    edges = [0.0, duration]
-    if cutoff is not None and cutoff < duration:
-        edges.insert(1, cutoff)
-        times = np.union1d(times, [cutoff])
-
+    cutoff = equipment.heater_off_s if equipment.heater_off_s is not None else float("inf")
+    band = equipment.thermostat_band_k
     initial_k = reactor.water.initial_temperature_k
+    heating = equipment.heating_power_w > 0 and (band is None or initial_k < band[1])
     state = [0.0, 0.0]
-    temperature = np.empty_like(times)
-    heat_lost = np.empty_like(times)
+    samples = []
     target_time = None
-    for start, end in zip(edges[:-1], edges[1:]):
-        power = equipment.heating_power_w if start == 0 else 0.0
+    active_s = 0.0
+    start = 0.0
+    sample_start = 0
+    while start < duration:
+        if len(samples) >= 100_000:
+            raise RuntimeError("Too many heater switches. Check the heater sizing and thermal settings.")
+        power = equipment.heating_power_w if heating else 0.0
+        end = min(duration, cutoff) if start < cutoff else duration
+        switching = False
+        if band is not None and start < cutoff and equipment.heating_power_w > 0:
+            threshold = band[1] if heating else band[0]
+            crossing = _phase_target_time(reactor, initial_k + state[0], threshold, power)
+            if crossing is not None and crossing <= end - start:
+                end = start + crossing
+                switching = True
+        if end <= start:
+            raise RuntimeError("Heater switching exceeds numerical time resolution.")
+        next_heating = end < cutoff and (not heating if switching else heating)
         if target_k is not None and target_time is None:
             hit = _phase_target_time(reactor, initial_k + state[0], target_k, power)
             if hit is not None and hit <= end - start:
@@ -104,16 +116,27 @@ def simulate(
         )
         if not solution.success:
             raise RuntimeError(f"Thermal integration failed: {solution.message}")
-        mask = (times >= start) & (times <= end)
-        temperature_change, heat_lost[mask] = solution.sol(times[mask])
-        temperature[mask] = initial_k + temperature_change
+        final_phase = end == duration
+        sample_end = np.searchsorted(times, end, side="right" if final_phase else "left")
+        phase_times = times[sample_start:sample_end]
+        if phase_times.size == 0 or phase_times[0] != start:
+            phase_times = np.insert(phase_times, 0, start)
+        temperature_change, phase_loss = solution.sol(phase_times)
+        phase_power = np.full_like(phase_times, power)
+        if final_phase:
+            phase_power[-1] = equipment.heating_power_w if next_heating else 0.0
+        phase_active_s = active_s + (phase_times - start) * heating
+        samples.append(np.stack((
+            phase_times, initial_k + temperature_change, phase_loss, phase_power,
+            equipment.heating_power_w * phase_active_s,
+        )))
+        active_s += (end - start) * heating
         state = solution.y[:, -1]
+        start = end
+        sample_start = sample_end
+        heating = next_heating
 
-    active_time = times if cutoff is None else np.minimum(times, cutoff)
-    power = np.full_like(times, equipment.heating_power_w)
-    if cutoff is not None:
-        power[times >= cutoff] = 0.0
-    heater_energy = equipment.heating_power_w * active_time
+    times, temperature, heat_lost, power, heater_energy = np.concatenate(samples, axis=1)
     stored_energy = reactor.thermal_capacitance_j_k * (temperature - initial_k)
     sensor = IdealTemperatureSensor() if sensor is None else sensor
     measured = np.asarray(sensor.measure(times.copy(), temperature.copy()), dtype=float)
@@ -122,5 +145,5 @@ def simulate(
     return SimulationResult(
         times, temperature, measured, power, reactor.heat_loss_w(temperature),
         heater_energy, heat_lost, heater_energy - heat_lost - stored_energy,
-        equipment.electrical_power_w * active_time[-1], target_k, target_time,
+        equipment.electrical_power_w * active_s, target_k, target_time,
     )

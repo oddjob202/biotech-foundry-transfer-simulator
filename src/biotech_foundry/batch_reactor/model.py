@@ -65,6 +65,7 @@ class Equipment:
     heater_efficiency: float = 0.85
     agitation_rpm: float = 200.0
     heater_off_s: float | None = None
+    temperature_setpoint_k: float | None = None
 
     def __post_init__(self):
         bounded("heater_rated_w", self.heater_rated_w, 0, float("inf"))
@@ -73,6 +74,15 @@ class Equipment:
         bounded("agitation_rpm", self.agitation_rpm, 0, float("inf"))
         if self.heater_off_s is not None:
             bounded("heater_off_s", self.heater_off_s, 0, float("inf"), strict=True)
+
+        if self.temperature_setpoint_k is not None:
+            bounded("temperature_setpoint_k", self.temperature_setpoint_k, 275.15, 371.15)
+
+    @property
+    def thermostat_band_k(self) -> tuple[float, float] | None:
+        if self.temperature_setpoint_k is None:
+            return None
+        return self.temperature_setpoint_k - 2.0, self.temperature_setpoint_k + 2.0
 
     @property
     def electrical_power_w(self):

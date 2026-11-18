@@ -32,6 +32,10 @@ def summarize(reactor: BatchReactor, result: SimulationResult) -> str:
         f"Ambient temperature          {reactor.ambient_temperature_k - 273.15:g} °C",
         f"Overall heat loss UA         {reactor.ua_w_k:g} W/K",
     ]
+    if equipment.thermostat_band_k is not None:
+        lower, upper = equipment.thermostat_band_k
+        lines.append(f"Thermostat setpoint          {equipment.temperature_setpoint_k - 273.15:g} °C "
+                     f"(on at {lower - 273.15:g} °C, off at {upper - 273.15:g} °C)")
     if result.target_k is not None:
         target = f"Target {result.target_k - 273.15:g} °C"
         if result.target_time_s is None:
