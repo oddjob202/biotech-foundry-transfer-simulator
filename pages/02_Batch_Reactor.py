@@ -12,8 +12,7 @@ from biotech_foundry.batch_reactor.solver import SolverSettings, simulate
 
 
 st.set_page_config(page_title="Biotech Foundry | Batch Reactor", layout="wide")
-st.title("R-201 · Batch reactor")
-st.caption("Water-only batch simulation · Simulator 002")
+st.title("Water Heating Simulation - Batch Reactor")
 
 
 @st.cache_data(show_spinner=False)
