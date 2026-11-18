@@ -1,0 +1,29 @@
+{
+  "vessel": {
+    "diameter_m": 0.5,
+    "height_m": 0.6,
+    "working_volume_m3": 0.060,
+    "maximum_capacity_m3": 0.1
+  },
+  "water": {
+    "density_kg_m3": 997,
+    "specific_heat_j_kg_k": 4180,
+    "initial_temperature_k": 293.15
+  },
+  "equipment": {
+    "heater_rated_w": 1500,
+    "heater_fraction": 1.0,
+    "heater_efficiency": 0.85,
+    "agitation_rpm": 200,
+    "heater_off_s": 5400
+  },
+  "ambient_temperature_k": 293.15,
+  "ua_w_k": 12,
+  "target_k": 313.15,
+  "solver": {
+    "duration_s": 10800,
+    "sample_interval_s": 30,
+    "rtol": 1e-8,
+    "atol": 1e-8
+  }
+}

@@ -34,3 +34,9 @@ The bundled pump catalog is deliberately synthetic: centrifugal, hygienic diaphr
 This is a quasi-steady, incompressible, single-phase, fully filled-pipe water model. Both tanks are atmospheric and modeled as vertical cylinders; their levels change between discrete time steps. It excludes pump efficiency/NPSH, startup transients, water hammer, air entrainment, leaks, non-water media, networks, and detailed positive-displacement-pump physics. The built-in diaphragm and peristaltic curves are simplified envelopes, not sizing tools. Pump input power therefore cannot be inferred from hydraulic power alone.
 
 Future work can add manufacturer curve imports, pump efficiency and NPSH, non-cylindrical tank geometry, additional fluid property models, and component/network models.
+
+## Simulator 002 — Water-filled batch reactor
+
+Run the separate command-line simulator with
+`python -m biotech_foundry.batch_reactor --config examples/batch-reactor.json --plot /tmp/batch-reactor.png`.
+See the [batch reactor engineering guide](docs/batch-reactor.md) for configuration, equations, and verification.
