@@ -1,0 +1,263 @@
+:root {
+    --operator-label: clamp(1rem, .8rem + .5vw, 1.75rem);
+    --operator-value: clamp(1.25rem, .9rem + .58vw, 2.12rem);
+    --operator-button-height: clamp(2.5rem, 1.95rem + .6vw, 3.15rem);
+    --select-value: clamp(1.1rem, .92rem + .52vw, 1.85rem);
+}
+
+[data-testid="stAppDeployButton"] {
+    display: none;
+}
+
+[data-testid="stMainBlockContainer"] {
+    max-width: none;
+    padding: 3.25rem clamp(.9rem, 1.65vw, 2.5rem) 1rem;
+}
+
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {
+    gap: .55rem;
+}
+
+[data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {
+    gap: .47rem;
+}
+
+[data-testid="stSidebarUserContent"] {
+    padding: .8rem 1rem 1rem;
+}
+
+[data-testid="stSidebar"] {
+    --sidebar-label: clamp(1rem, .85rem + .5vw, 1.7rem);
+    --sidebar-value: var(--select-value);
+    --sidebar-control-height: clamp(2.55rem, 2rem + .55vw, 3.15rem);
+}
+
+[data-testid="stSidebarUserContent"] h2 {
+    font-size: clamp(1.3rem, 1rem + .56vw, 2rem);
+    padding: .4rem 0 .15rem;
+}
+
+[data-testid="stSidebarUserContent"] [data-testid="stHorizontalBlock"] {
+    gap: .65rem;
+}
+
+[data-testid="stSidebarNavLink"] span {
+    font-size: var(--sidebar-label);
+    line-height: 1.25;
+    white-space: normal;
+}
+
+[data-testid="stExpander"] summary p,
+.st-key-temperature_trend [data-testid="stCheckbox"] label p,
+.st-key-temperature_trend button p,
+.st-key-run_controls button p {
+    font-size: var(--operator-label);
+    line-height: 1.25;
+}
+
+:is(.st-key-run_controls, .st-key-temperature_trend) button {
+    min-height: var(--operator-button-height);
+}
+
+.st-key-run_controls {
+    padding-block: .65rem;
+}
+
+.st-key-run_controls [data-testid="stHorizontalBlock"] {
+    gap: 1.25rem;
+}
+
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p {
+    font-size: var(--sidebar-label);
+    line-height: 1.22;
+    font-weight: 550;
+}
+
+[data-testid="stSidebar"] [data-testid="stNumberInputField"],
+[data-testid="stSidebar"] [data-testid="stSelectbox"] input[role="combobox"],
+[data-testid="stSidebar"] [data-baseweb="select"] div {
+    font-size: var(--sidebar-value);
+    line-height: 1.2;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] input[role="combobox"] {
+    font-weight: 550;
+}
+
+/* Newer Streamlit versions render selectbox menus in a portal outside the sidebar. */
+[role="listbox"] [role="option"] {
+    font-size: var(--select-value);
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+[data-testid="stSidebar"] [data-testid="stNumberInputField"] {
+    padding-inline: .55rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+[data-testid="stSidebar"] [data-baseweb="base-input"],
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] input[role="combobox"],
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+    min-height: var(--sidebar-control-height);
+}
+
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+    min-height: 0;
+    margin-bottom: .25rem;
+}
+
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+    width: 2rem;
+    min-width: 2rem;
+}
+
+.run-state, .run-fluid, .command-label, .operating-envelope {
+    font-size: var(--operator-label);
+    line-height: 1.25;
+}
+
+.run-state {
+    margin: 0;
+    padding: .4rem 0;
+    font-weight: 650;
+}
+
+.run-state[data-limit="true"] { color: #ffc885; }
+
+.run-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .15rem 1rem;
+}
+
+.run-fluid {
+    margin: 0;
+    padding: .4rem 0;
+    opacity: .82;
+}
+
+.command-label {
+    display: block;
+    font-weight: 600;
+}
+
+.command-value {
+    display: block;
+    font-size: var(--operator-value);
+    font-weight: 720;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+}
+
+.operating-band {
+    font-size: var(--operator-label);
+    font-weight: 600;
+    color: #8ae6af;
+}
+
+.operating-band[data-band="low"],
+.operating-band[data-band="high"] { color: #ffc885; }
+
+.operating-envelope {
+    margin: 0;
+    color: inherit;
+    opacity: .84;
+}
+
+.operating-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .25rem 1rem;
+}
+
+.st-key-scada_commands [data-testid="stSliderThumbValue"] { visibility: hidden; }
+
+.st-key-scada_commands [data-testid="stSliderTickBarMin"],
+.st-key-scada_commands [data-testid="stSliderTickBarMax"] {
+    font-size: var(--operator-label);
+}
+
+.operator-readings {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .45rem;
+    margin: 0;
+}
+
+.operator-readings > div {
+    min-width: 0;
+    padding: .55rem .7rem;
+    border: 1px solid rgba(148, 163, 184, .42);
+    border-radius: .5rem;
+}
+
+.operator-readings dt {
+    font-size: var(--operator-label);
+    font-weight: 560;
+    line-height: 1.14;
+}
+
+.operator-readings dd {
+    margin: .24rem 0 0;
+    font-size: var(--operator-value);
+    font-weight: 670;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.st-key-process_overview [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
+
+.st-key-temperature_trend h4 {
+    font-size: var(--operator-value);
+    padding: 0;
+}
+
+.reactor-pid {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* Reserve room for the live trend on desktop without clipping the schematic. */
+    max-height: clamp(17rem, calc(100vh - 46.5rem), 51rem);
+    max-height: clamp(17rem, calc(100dvh - 46.5rem), 51rem);
+    border-radius: .8rem;
+    background: #10202e;
+}
+
+@media (min-width: 861px) {
+    [data-testid="stSidebar"]:is([aria-expanded="true"], [data-collapsed="false"]) {
+        min-width: clamp(24.75rem, 16.5vw, 35rem);
+    }
+}
+
+@media (min-width: 1025px) {
+    .st-key-process_overview [data-testid="stElementContainer"]:has(.operator-readings) {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    [data-testid="stMainBlockContainer"] { padding-inline: .75rem; }
+    .operator-readings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .st-key-run_controls [data-testid="stHorizontalBlock"],
+    .st-key-scada_commands [data-testid="stHorizontalBlock"],
+    .st-key-temperature_trend [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap;
+        gap: .4rem;
+    }
+    .st-key-run_controls [data-testid="stHorizontalBlock"] { gap: .65rem; }
+    .st-key-run_controls [data-testid="stColumn"] { flex: 1 1 25%; min-width: 0; }
+    .st-key-scada_commands [data-testid="stColumn"],
+    .st-key-temperature_trend [data-testid="stColumn"] { flex: 1 1 42%; min-width: 0; }
+    .st-key-run_controls [data-testid="stColumn"]:last-child,
+    .st-key-scada_commands [data-testid="stColumn"]:last-child,
+    .st-key-temperature_trend [data-testid="stColumn"]:first-child { flex-basis: 100%; }
+}
