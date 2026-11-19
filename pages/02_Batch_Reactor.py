@@ -5,6 +5,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from biotech_foundry.batch_reactor.model import BatchReactor, Equipment, Vessel, Water
 from biotech_foundry.batch_reactor.schematic import reactor_schematic
@@ -13,6 +14,12 @@ from biotech_foundry.batch_reactor.solver import SolverSettings, simulate
 
 st.set_page_config(page_title="Biotech Foundry | Batch Reactor", layout="wide")
 st.title("Water Heating Simulation - Batch Reactor")
+
+TANK_SIZES = {
+    "Current tank — 118 L": {"diameter_m": 0.50, "height_m": 0.60},
+    "Wide production tank — 265 L": {"diameter_m": 0.75, "height_m": 0.60},
+    "Tall pilot tank — 147 L": {"diameter_m": 0.50, "height_m": 0.75},
+}
 
 
 @st.cache_data(show_spinner=False)
@@ -23,7 +30,11 @@ def run_batch(reactor, settings):
 with st.sidebar:
     st.header("Batch settings")
     with st.form("batch_settings"):
-        volume_l = st.number_input("Working volume (L)", 1.0, 117.8, 60.0, step=1.0)
+        tank_name = st.selectbox("Tank size", list(TANK_SIZES))
+        tank = TANK_SIZES[tank_name]
+        geometric_capacity_l = np.pi * (tank["diameter_m"] / 2) ** 2 * tank["height_m"] * 1000
+        st.caption(f"Vessel capacity: {geometric_capacity_l:.0f} L · {tank['diameter_m']:.2f} m diameter × {tank['height_m']:.2f} m straight side")
+        volume_l = st.number_input("Working water volume (L)", 1.0, 1_000.0, 60.0, step=1.0)
         initial_c = st.number_input("Initial water temperature (°C)", 0.0, 100.0, 20.0)
         ambient_c = st.number_input("Ambient temperature (°C)", -40.0, 100.0, 20.0)
         ua = st.number_input("Ambient heat loss UA (W/K)", min_value=0.0, value=12.0)
@@ -38,8 +49,15 @@ with st.sidebar:
         cutoff_min = st.number_input("Shutoff time (min)", 1, 1440, 90)
         st.form_submit_button("Apply settings", width="stretch")
 
+if volume_l > geometric_capacity_l:
+    st.error(
+        f"{volume_l:g} L of working water does not fit the selected {tank_name} "
+        f"({geometric_capacity_l:.0f} L capacity). Select a larger tank or reduce the working water volume."
+    )
+    st.stop()
+
 reactor = BatchReactor(
-    vessel=Vessel(working_volume_m3=volume_l / 1000),
+    vessel=Vessel(diameter_m=tank["diameter_m"], height_m=tank["height_m"], working_volume_m3=volume_l / 1000),
     water=Water(initial_temperature_k=initial_c + 273.15),
     equipment=Equipment(
         heater_rated_w=rated_w,
@@ -56,7 +74,7 @@ settings = SolverSettings(duration_s=duration_min * 60)
 try:
     result = run_batch(reactor, settings)
 except (RuntimeError, ValueError) as error:
-    st.error(f"Unable to run this batch. {error}")
+    st.error(f"Unable to run this batch: {error} Select a larger tank or reduce the working water volume.")
     st.stop()
 
 state = st.session_state
@@ -123,7 +141,8 @@ def operator_view():
     st.slider("Batch position (min)", 0.0, float(duration_min), step=0.5,
               key="reactor_seek_min", on_change=seek, disabled=playing)
 
-    st.html(reactor_schematic(reactor, measured_c, heater_w, loss_w, playing=playing))
+    # An iframe isolates SVG/CSS from host-page sanitization and renders across hosted Streamlit runtimes.
+    components.html(reactor_schematic(reactor, measured_c, heater_w, loss_w, playing=playing), height=420, scrolling=False)
     st.caption("Green marks energized equipment. Blue dashes show the instrument signal. Amber dashes show modeled heat exchange. Impeller motion illustrates the RPM setpoint.")
     metrics = st.columns(4)
     metrics[0].metric("TT-201 · Water", f"{measured_c:.1f} °C", border=True)

@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from biotech_foundry.batch_reactor.model import BatchReactor, Equipment, Vessel, Water
+from biotech_foundry.batch_reactor.schematic import reactor_schematic
 from biotech_foundry.batch_reactor.solver import SolverSettings, simulate
 
 
@@ -14,6 +15,18 @@ def test_water_mass_and_geometry():
     vessel = reactor.vessel
     assert vessel.liquid_height_m * vessel.cross_section_m2 == pytest.approx(0.05)
     assert vessel.wetted_area_m2 == pytest.approx(vessel.cross_section_m2 + 4 * 0.05 / vessel.diameter_m)
+
+
+def test_selected_vessel_geometry_controls_schematic_size_and_level():
+    current = BatchReactor(vessel=Vessel(diameter_m=0.5, height_m=0.6, working_volume_m3=0.06))
+    wider = BatchReactor(vessel=Vessel(diameter_m=0.75, height_m=0.6, working_volume_m3=0.06))
+    current_svg = reactor_schematic(current, 20, 1275, 0, playing=False)
+    wider_svg = reactor_schematic(wider, 20, 0, 0, playing=True)
+    assert 'width="150.00" height="180.00"' in current_svg
+    assert 'width="225.00" height="180.00"' in wider_svg
+    assert 'capacity · 60 L water' in wider_svg
+    assert 'class="path active trace"' in current_svg
+    assert 'class="path idle trace"' in wider_svg
 
 
 @pytest.mark.parametrize(("factory", "kwargs", "field"), [
