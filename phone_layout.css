@@ -1,0 +1,39 @@
+[data-testid="stMainBlockContainer"] {padding:1rem .8rem max(1.5rem,env(safe-area-inset-bottom));min-width:0;}
+body:has([data-testid="stHeader"]) [data-testid="stMainBlockContainer"] {padding-top:3.5rem;}
+[data-testid="stMainBlockContainer"] h1 {font-size:clamp(1.55rem,6vw,2rem);line-height:1.15;padding-bottom:.35rem;}
+[data-testid="stMainBlockContainer"] :is(button,details>summary,[data-baseweb="select"]>div) {min-height:44px;}
+[data-testid="stMainBlockContainer"] :is(input,select) {font-size:16px;}
+[data-testid="stMainBlockContainer"] [data-testid="stSlider"] {padding-block:.25rem;}
+:is(.st-key-phone_transport,.st-key-run_controls) [data-testid="stHorizontalBlock"],
+.st-key-phone_transport[data-testid="stHorizontalBlock"] {
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;
+}
+:is(.st-key-phone_transport,.st-key-run_controls) [data-testid="stColumn"] {width:100%;min-width:0;}
+:is(.st-key-phone_transport,.st-key-run_controls) [data-testid="stColumn"]:nth-child(4) {grid-column:1/-1;}
+.st-key-phone_transport button,.st-key-run_controls button {width:100%;padding-inline:.3rem;}
+.st-key-phone_metrics [data-testid="stHorizontalBlock"],.st-key-phone_metrics[data-testid="stHorizontalBlock"] {
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;
+}
+.st-key-phone_metrics :is([data-testid="stColumn"],[data-testid="stElementContainer"]) {min-width:0;width:100%;}
+.st-key-phone_metrics [data-testid="stMetric"] {padding:.55rem;}
+.st-key-phone_metrics [data-testid="stMetricLabel"] p {white-space:normal;font-size:.9rem;}
+.st-key-phone_metrics [data-testid="stMetricValue"] {font-size:1.3rem;}
+.phone-process,.phone-thermal {background:#102431;color:#eff7f8;border:1px solid #355467;border-radius:.7rem;width:100%;box-sizing:border-box;}
+.phone-process {display:block;max-height:15rem;}
+.phone-process text {font:14px system-ui,sans-serif;text-anchor:middle;fill:#eef6fa;}
+.phone-process .tag,.phone-process .value {font-weight:700;}
+.phone-process .small {font-size:12px;fill:#bfd2db;}
+.phone-process .shell,.phone-process .pump {fill:#1c3848;stroke:#9bbec4;stroke-width:2;}
+.phone-process .water {fill:#225f83;}
+.phone-process .pipe {fill:none;stroke:#9bbec4;stroke-width:4;stroke-linejoin:round;}
+.phone-process .flowing {stroke:#6bdcaa;stroke-dasharray:7 4;}
+.phone-process .on {fill:#246c53;stroke:#6bdcaa;}
+.phone-thermal {padding:1rem;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:center;}
+.phone-vessel {display:grid;justify-items:center;align-content:center;min-height:6rem;border:2px solid #9bbec4;border-radius:.8rem;background:linear-gradient(to top,#225f83 var(--fill),#1c3848 var(--fill));}
+.phone-vessel strong,.phone-thermal dd {font-size:1.2rem;line-height:1.3;font-variant-numeric:tabular-nums;}
+.phone-vessel span,.phone-thermal dt {font-size:.9rem;}
+.phone-thermal dl,.phone-thermal dd {margin:0;}
+.phone-thermal dl {display:grid;gap:.75rem;}
+.phone-thermal dd {font-weight:650;}
+.st-key-scada_commands [data-testid="stHorizontalBlock"] {flex-direction:column;gap:.65rem;}
+.st-key-scada_commands [data-testid="stColumn"] {width:100%;}

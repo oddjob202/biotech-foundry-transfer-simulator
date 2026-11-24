@@ -34,7 +34,7 @@ def _visible_history(history, start_min):
     return pd.concat([pd.DataFrame([boundary]), visible], ignore_index=True)
 
 
-def build_temperature_trend(data, *, show_outlet=False, full_run=False, show_mass=False):
+def build_temperature_trend(data, *, show_outlet=False, full_run=False, show_mass=False, compact=False):
     """Return a Vega-Lite spec with fixed dataset names for in-place live updates."""
     history = data.assign(minutes=data["time_s"] / 60)
     start, end = trend_bounds(history["minutes"].iloc[-1], full_run=full_run)
@@ -58,7 +58,7 @@ def build_temperature_trend(data, *, show_outlet=False, full_run=False, show_mas
         dashes.append([8, 3, 2, 3])
 
     legend = alt.Legend(
-        orient="top", columns=2, title=None, labelLimit=180,
+        orient="top", columns=1 if compact else 2, title=None, labelLimit=180,
         labelFontSize=21, padding=2, offset=7, columnPadding=12,
     )
     domain = list(labels.values())
