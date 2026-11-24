@@ -7,13 +7,15 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+from phone_layout import phone_view, settings_panel, thermal_display
 from biotech_foundry.batch_reactor.model import BatchReactor, Equipment, Vessel, Water
 from biotech_foundry.batch_reactor.schematic import reactor_schematic
 from biotech_foundry.batch_reactor.solver import SolverSettings, simulate
 
 
 st.set_page_config(page_title="Biotech Foundry | Batch Reactor", layout="wide")
-st.title("Water Heating Simulation - Batch Reactor")
+compact = phone_view()
+st.title("Water heating" if compact else "Water Heating Simulation - Batch Reactor")
 
 TANK_SIZES = {
     "Current tank — 118 L": {"diameter_m": 0.50, "height_m": 0.60},
@@ -27,8 +29,9 @@ def run_batch(reactor, settings):
     return simulate(reactor, settings)
 
 
-with st.sidebar:
-    st.header("Batch settings")
+with settings_panel("Batch settings", compact):
+    if not compact:
+        st.header("Batch settings")
     with st.form("batch_settings"):
         tank_name = st.selectbox("Tank size", list(TANK_SIZES))
         tank = TANK_SIZES[tank_name]
@@ -131,24 +134,31 @@ def operator_view():
         "Heating" if heater_w > 0 else "Heater off"
     )
 
-    play_col, pause_col, reset_col, status_col = st.columns([1, 1, 1, 5], vertical_alignment="center")
-    play_col.button("Play", icon=":material/play_arrow:", on_click=play, disabled=playing)
-    pause_col.button("Pause", icon=":material/pause:", on_click=pause, disabled=not playing)
-    reset_col.button("Reset", icon=":material/restart_alt:", on_click=reset)
-    status_col.caption(f"{phase} · {batch_min:.1f} / {duration_min} min · playback 120×")
+    with st.container(key="phone_transport"):
+        play_col, pause_col, reset_col, status_col = st.columns([1, 1, 1, 5], vertical_alignment="center")
+        play_col.button("Play", icon=":material/play_arrow:", on_click=play, disabled=playing)
+        pause_col.button("Pause", icon=":material/pause:", on_click=pause, disabled=not playing)
+        reset_col.button("Reset", icon=":material/restart_alt:", on_click=reset)
+        status_col.caption(f"{phase} · {batch_min:.1f} / {duration_min} min · playback 120×")
 
     state.reactor_seek_min = int(state.reactor_elapsed / 30) / 2
     st.slider("Batch position (min)", 0.0, float(duration_min), step=0.5,
               key="reactor_seek_min", on_change=seek, disabled=playing)
 
-    # An iframe isolates SVG/CSS from host-page sanitization and renders across hosted Streamlit runtimes.
-    components.html(reactor_schematic(reactor, measured_c, heater_w, loss_w, playing=playing), height=420, scrolling=False)
-    st.caption("Green marks energized equipment. Blue dashes show the instrument signal. Amber dashes show modeled heat exchange. Impeller motion illustrates the RPM setpoint.")
-    metrics = st.columns(4)
-    metrics[0].metric("TT-201 · Water", f"{measured_c:.1f} °C", border=True)
-    metrics[1].metric("EH-201 · Delivered heat", f"{heater_w:,.0f} W", border=True)
-    metrics[2].metric("M-201 · Setpoint", f"{rpm:,.0f} RPM", border=True)
-    metrics[3].metric("Heater energy to water", f"{result.heater_energy_j[index] / 3.6e6:.2f} kWh", border=True)
+    if compact:
+        thermal_display(water_l=volume_l, capacity_l=geometric_capacity_l, temp_c=measured_c,
+                        first=("Heat to water", f"{heater_w:,.0f} W"),
+                        second=("Ambient heat loss", f"{loss_w:,.0f} W"))
+    else:
+        # An iframe isolates SVG/CSS from host-page sanitization and renders across hosted Streamlit runtimes.
+        components.html(reactor_schematic(reactor, measured_c, heater_w, loss_w, playing=playing), height=420, scrolling=False)
+        st.caption("Green marks energized equipment. Blue dashes show the instrument signal. Amber dashes show modeled heat exchange. Impeller motion illustrates the RPM setpoint.")
+    with st.container(key="phone_metrics"):
+        metrics = st.columns(4)
+        metrics[0].metric("TT-201 · Water", f"{measured_c:.1f} °C", border=True)
+        metrics[1].metric("EH-201 · Delivered heat", f"{heater_w:,.0f} W", border=True)
+        metrics[2].metric("M-201 · Setpoint", f"{rpm:,.0f} RPM", border=True)
+        metrics[3].metric("Heater energy to water", f"{result.heater_energy_j[index] / 3.6e6:.2f} kWh", border=True)
 
     st.subheader("Temperature trend")
     st.caption(f"Setpoint {setpoint_c:g} °C · Heater on at {setpoint_c - 2:g} °C · "

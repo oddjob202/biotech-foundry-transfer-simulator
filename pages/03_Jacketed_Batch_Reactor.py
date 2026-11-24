@@ -6,6 +6,7 @@ from time import monotonic, sleep
 import pandas as pd
 import streamlit as st
 
+from phone_layout import phone_view, settings_panel, thermal_display
 from reactor_diagram import render_reactor_diagram
 from reactor_loop import LoopInput, advance, fluid_properties, initial_state, reading
 from reactor_trend import build_temperature_trend
@@ -15,7 +16,10 @@ from trend_history import TemperatureSample, record_temperature
 st.set_page_config(page_title="Batch Reactor Sim 02", layout="wide", initial_sidebar_state="auto")
 st.html(Path(__file__).with_name("operator_view.css"))
 
-with st.sidebar:
+compact = phone_view()
+if compact:
+    st.title("Jacketed batch reactor")
+with settings_panel("Jacket and batch settings", compact):
     st.header("Jacket fluid")
     name = st.selectbox(
         "Jacket fluid",
@@ -170,6 +174,8 @@ with st.container(key="run_controls"):
         '</div>'
     )
 
+# Reserve the phone diagram next to playback before rendering the setpoint controls.
+phone_overview = st.container(key="phone_overview") if compact else None
 with st.container(border=True, key="scada_commands"):
     tic_col, motor_col, signal_col = st.columns([3, 3, 2])
     tic_col.html(
@@ -258,25 +264,30 @@ narrow_readings = (
 
 # The liquid level uses the prior simulator's 118 L vessel capacity as a visual basis.
 VESSEL_CAPACITY_L = 118.0
-diagram = render_reactor_diagram(
-    inlet_c=snapshot.inlet_c,
-    outlet_c=snapshot.outlet_c,
-    water_c=snapshot.water_c,
-    water_l=water,
-    capacity_l=VESSEL_CAPACITY_L,
-    duty_w=duty_w,
-    ambient_w=snapshot.heat_loss_w,
-    rpm=rpm,
-    playing=st.session_state.playing,
-    circulating=snapshot.circulating,
-    batch_mass_kg=batch_mass_kg,
-    gross_mass_kg=gross_mass_kg,
-)
-# Keep the SVG in a single Markdown HTML block so its inline graphics render.
+if compact:
+    with phone_overview:
+        thermal_display(water_l=water, capacity_l=VESSEL_CAPACITY_L, temp_c=snapshot.water_c,
+                        first=("Jacket inlet", f"{snapshot.inlet_c:.1f} °C"),
+                        second=("Jacket outlet", f"{snapshot.outlet_c:.1f} °C"))
 with st.container(key="process_overview"):
-    st.markdown(f'<div>{" ".join(line.strip() for line in diagram.splitlines())}</div>', unsafe_allow_html=True)
+    if not compact:
+        diagram = render_reactor_diagram(
+            inlet_c=snapshot.inlet_c,
+            outlet_c=snapshot.outlet_c,
+            water_c=snapshot.water_c,
+            water_l=water,
+            capacity_l=VESSEL_CAPACITY_L,
+            duty_w=duty_w,
+            ambient_w=snapshot.heat_loss_w,
+            rpm=rpm,
+            playing=st.session_state.playing,
+            circulating=snapshot.circulating,
+            batch_mass_kg=batch_mass_kg,
+            gross_mass_kg=gross_mass_kg,
+        )
+        st.markdown(f'<div>{" ".join(line.strip() for line in diagram.splitlines())}</div>', unsafe_allow_html=True)
     entries = "".join(
-        f"<div><dt>{label}</dt><dd>{escape(value)}</dd></div>" for label, value in narrow_readings
+        f"<div><dt>{label}</dt><dd>{escape(value)}</dd></div>" for label, value in (narrow_readings[3:] if compact else narrow_readings)
     )
     st.html(f'<dl class="operator-readings" aria-label="Live readings">{entries}</dl>')
 
@@ -297,7 +308,7 @@ with st.container(key="temperature_trend"):
         )
     displayed = history if history[-1] == sample else [*history, sample]
     chart = build_temperature_trend(
-        pd.DataFrame(displayed), show_outlet=show_outlet, full_run=full_run, show_mass=show_mass,
+        pd.DataFrame(displayed), show_outlet=show_outlet, full_run=full_run, show_mass=show_mass, compact=compact,
     )
     st.vega_lite_chart(spec=chart, use_container_width=True)
 
